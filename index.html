@@ -2,153 +2,192 @@
 <html lang="fr">
 <head>
   <meta charset="utf-8">
-  <title>GORILLATOOL - VR Edition</title>
+  <title>GORILLATOOL VR - Quest Edition</title>
   <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
   <style>
-    body { margin:0; overflow:hidden; background:#000; }
-    .info {
+    body { margin:0; overflow:hidden; background:#000; font-family: monospace; }
+    .overlay {
       position: absolute; top: 10px; left: 10px; color: #0ff; 
-      background: rgba(0,0,0,0.7); padding: 12px; border-radius: 8px;
-      font-family: monospace; z-index: 100; pointer-events: none;
+      background: rgba(10,0,30,0.8); padding: 15px; border-radius: 10px;
+      z-index: 200; pointer-events: none; border: 1px solid #0ff;
     }
   </style>
 </head>
 <body>
-  <div class="info">
+  <div id="overlay" class="overlay">
     <strong>GORILLATOOL VR</strong><br>
-    Détection casque en cours...
+    Initialisation...
   </div>
 
-  <a-scene background="color: #0a001f" loading-screen="enabled: false">
+  <a-scene background="color: #0a001f" xr-mode-ui="enabled: false" loading-screen="enabled: false">
 
-    <!-- Lumière ambiance -->
-    <a-entity light="type: ambient; color: #112; intensity: 0.6"></a-entity>
-    <a-entity light="type: directional; color: #88f; intensity: 0.8" position="5 10 -5"></a-entity>
+    <!-- Lumières néon -->
+    <a-entity light="type: ambient; color: #220033; intensity: 0.8"></a-entity>
+    <a-entity light="type: point; color: #ff00ff; intensity: 1.5" position="0 5 -3"></a-entity>
+    <a-entity light="type: point; color: #00ffff; intensity: 1.2" position="4 3 -6"></a-entity>
 
-    <!-- Gros ASCII GORILLA flottant (texte 3D) -->
-    <a-entity position="0 2.5 -6" rotation="0 15 0" text="value:     _____ ____ _____ _____ _ _ _______ ____ ____ _\n   / ____|/ __ \| __ \|_ _| | | | /\|__ __/ __ \ / __ \| |\n  | | __| | | | |__) | | | | | | | / \ | | | | | | | | | |\n  | | |_ | | | | _ / | | | | | | / /\ \ | | | | | | | | | |\n  | |__| | |__| | | \ \ _| |_| |____| |____ / ____ \| | | |__| | |__| | |____\n   \_____|\____/|_| \_\_____|______|______/_/ \_\_| \____/ \____/|______|; 
-      color: #ff00ff; width: 6; align: center; font: https://cdn.aframe.io/fonts/Exo2Bold.fnt">
+    <!-- Menu de Loading (caché après chargement) -->
+    <a-entity id="loading-screen" position="0 1.5 -4">
+      <a-plane width="4" height="2.5" color="#110022" opacity="0.95"></a-plane>
+      
+      <a-text value="GORILLATOOL" position="0 0.8 0.1" color="#ff00ff" align="center" width="3" font="https://cdn.aframe.io/fonts/Exo2Bold.fnt"></a-text>
+      <a-text id="loading-text" value="DETECTING META QUEST..." position="0 0.2 0.1" color="#00ffcc" align="center" width="2.8"></a-text>
+      
+      <!-- Barre de progression -->
+      <a-plane id="progress-bar-bg" width="3" height="0.15" color="#330033" position="0 -0.5 0.1"></a-plane>
+      <a-plane id="progress-bar" width="0" height="0.12" color="#00ff88" position="-1.5 -0.5 0.15"></a-plane>
+      
+      <a-text value="CONNECTING TO HEADSET..." position="0 -1 0.1" color="#ff8800" align="center" width="2.5"></a-text>
     </a-entity>
 
-    <!-- Panneau de menu 3D -->
-    <a-entity id="menu" position="0 1.2 -3.5" rotation="0 0 0">
+    <!-- Menu principal (apparaît après loading) -->
+    <a-entity id="main-menu" visible="false" position="0 1.4 -3.8">
 
-      <a-plane width="3.2" height="2.8" color="#1a0033" opacity="0.95" shadow="cast:true; receive:true"></a-plane>
+      <a-plane width="3.8" height="3" color="#1a0033" opacity="0.96" shadow></a-plane>
+      
+      <a-text value="GORILLATOOL MENU" position="0 1.2 0.1" color="#ff00ff" align="center" width="3" font="https://cdn.aframe.io/fonts/Exo2Bold.fnt"></a-text>
+      <a-text id="connected-status" value="CONNECTED TO META QUEST" position="0 0.8 0.1" color="#00ff88" align="center" width="2.8"></a-text>
 
-      <a-text value="GORILLATOOL MENU" position="0 1.1 0.05" color="#ff00ff" align="center" width="2.8" font="https://cdn.aframe.io/fonts/Exo2Bold.fnt"></a-text>
-      <a-text id="status" value="Détection casque..." position="0 0.7 0.05" color="#00ffcc" align="center" width="2.6"></a-text>
-
-      <!-- Toggles -->
-      <a-entity id="aimbot" class="toggle" position="-1.2 0.2 0.1" data-name="Aimbot">
-        <a-plane width="2" height="0.4" color="#222"></a-plane>
-        <a-text value="Aimbot" position="-0.8 0 0.05" color="white" width="1.8"></a-text>
-        <a-text id="aimbot-status" value="OFF" position="0.8 0 0.05" color="#ff0000" align="right" width="1"></a-text>
+      <!-- Options togglables (avec raycaster + trigger) -->
+      <a-entity class="option" id="aimbot" position="0 0.3 0.1" data-state="off">
+        <a-plane width="3" height="0.45" color="#220044"></a-plane>
+        <a-text value="Aimbot" position="-1.2 0 0.05" color="white" width="2"></a-text>
+        <a-text id="aimbot-status" value="OFF" position="1.1 0 0.05" color="#ff4444" align="right" width="1"></a-text>
       </a-entity>
 
-      <a-entity id="esp" class="toggle" position="-1.2 -0.3 0.1" data-name="ESP">
-        <a-plane width="2" height="0.4" color="#222"></a-plane>
-        <a-text value="ESP" position="-0.8 0 0.05" color="white" width="1.8"></a-text>
-        <a-text id="esp-status" value="OFF" position="0.8 0 0.05" color="#ff0000" align="right" width="1"></a-text>
+      <a-entity class="option" id="esp" position="0 -0.25 0.1" data-state="off">
+        <a-plane width="3" height="0.45" color="#220044"></a-plane>
+        <a-text value="ESP" position="-1.2 0 0.05" color="white" width="2"></a-text>
+        <a-text id="esp-status" value="OFF" position="1.1 0 0.05" color="#ff4444" align="right" width="1"></a-text>
       </a-entity>
 
-      <a-entity id="norecoil" class="toggle" position="-1.2 -0.8 0.1" data-name="No Recoil">
-        <a-plane width="2" height="0.4" color="#222"></a-plane>
-        <a-text value="No Recoil" position="-0.8 0 0.05" color="white" width="1.8"></a-text>
-        <a-text id="norecoil-status" value="OFF" position="0.8 0 0.05" color="#ff0000" align="right" width="1"></a-text>
+      <a-entity class="option" id="norecoil" position="0 -0.8 0.1" data-state="off">
+        <a-plane width="3" height="0.45" color="#220044"></a-plane>
+        <a-text value="No Recoil" position="-1.2 0 0.05" color="white" width="2"></a-text>
+        <a-text id="norecoil-status" value="OFF" position="1.1 0 0.05" color="#ff4444" align="right" width="1"></a-text>
       </a-entity>
 
-      <a-entity id="ammo" class="toggle" position="-1.2 -1.3 0.1" data-name="Unlimited Ammo">
-        <a-plane width="2" height="0.4" color="#222"></a-plane>
-        <a-text value="Unlimited Ammo" position="-0.8 0 0.05" color="white" width="1.8"></a-text>
-        <a-text id="ammo-status" value="OFF" position="0.8 0 0.05" color="#ff0000" align="right" width="1"></a-text>
+      <a-entity class="option" id="ammo" position="0 -1.35 0.1" data-state="off">
+        <a-plane width="3" height="0.45" color="#220044"></a-plane>
+        <a-text value="Unlimited Ammo" position="-1.2 0 0.05" color="white" width="2"></a-text>
+        <a-text id="ammo-status" value="OFF" position="1.1 0 0.05" color="#ff4444" align="right" width="1"></a-text>
       </a-entity>
 
       <!-- Bouton Exit -->
-      <a-plane id="exit-btn" width="2" height="0.45" color="#990000" position="0 -2 0.1" 
-               onclick="exitVR()">
-        <a-text value="EXIT" align="center" color="#fff" width="1.6" position="0 0 0.05"></a-text>
-      </a-plane>
-
+      <a-entity id="exit-btn" position="0 -2.1 0.1">
+        <a-plane width="2.2" height="0.5" color="#880000"></a-plane>
+        <a-text value="EXIT TOOL" position="0 0 0.05" color="#ffffff" align="center" width="1.8"></a-text>
+      </a-entity>
     </a-entity>
 
-    <!-- Sol / Grid -->
-    <a-plane position="0 0 -4" rotation="-90 0 0" width="20" height="20" color="#110022" 
-             material="shader: flat"></a-plane>
+    <!-- Raycaster pour les manettes (laser) -->
+    <a-camera>
+      <a-entity cursor="rayOrigin: mouse" raycaster="objects: .option, #exit-btn" visible="false"></a-entity>
+    </a-camera>
+
+    <!-- Contrôleurs (gauche + droite) avec raycaster -->
+    <a-entity id="left-hand" hand-controls="hand: left; handModelStyle: lowPoly" raycaster="objects: .option, #exit-btn" line="color: #00ffff; opacity: 0.8"></a-entity>
+    <a-entity id="right-hand" hand-controls="hand: right; handModelStyle: lowPoly" raycaster="objects: .option, #exit-btn" line="color: #ff00ff; opacity: 0.8"></a-entity>
+
+    <!-- Sol grid néon -->
+    <a-plane position="0 0 -5" rotation="-90 0 0" width="30" height="30" color="#0a001f" material="shader: flat"></a-plane>
 
   </a-scene>
 
   <script>
     const scene = document.querySelector('a-scene');
-    let connected = false;
-    const cheats = {
-      Aimbot: false,
-      ESP: false,
-      "No Recoil": false,
-      "Unlimited Ammo": false
-    };
+    const loadingScreen = document.getElementById('loading-screen');
+    const mainMenu = document.getElementById('main-menu');
+    const overlay = document.getElementById('overlay');
 
-    // Détection du casque + entrée automatique en VR/MR
-    async function detectAndEnterVR() {
-      if (!navigator.xr) {
-        document.querySelector('.info').innerHTML += "<br>WebXR non supporté";
-        return;
-      }
+    let cheats = { Aimbot: false, ESP: false, "No Recoil": false, "Unlimited Ammo": false };
 
-      const isVR = await navigator.xr.isSessionSupported('immersive-vr');
-      const isAR = await navigator.xr.isSessionSupported('immersive-ar'); // Passthrough sur Quest 3/3S
+    // Animation de la barre de loading
+    function startLoading() {
+      let progress = 0;
+      const bar = document.getElementById('progress-bar');
+      const text = document.getElementById('loading-text');
 
-      let mode = 'immersive-vr';
-      if (isAR) mode = 'immersive-ar';   // Priorité au passthrough si disponible
+      const interval = setInterval(() => {
+        progress += Math.random() * 8 + 4;
+        if (progress > 100) progress = 100;
+        
+        bar.setAttribute('width', (progress / 100) * 3);
+        bar.setAttribute('position', `${-1.5 + (progress / 100) * 1.5} -0.5 0.15`);
 
-      document.getElementById('status').setAttribute('value', 
-        isAR ? 'Meta Quest détecté (Passthrough)' : 'Meta Quest détecté (VR)');
+        if (progress > 40) text.setAttribute('value', 'CONNECTING TO QUEST...');
+        if (progress > 75) text.setAttribute('value', 'INITIALIZING TOOL...');
+
+        if (progress >= 100) {
+          clearInterval(interval);
+          setTimeout(finishLoading, 600);
+        }
+      }, 80);
+    }
+
+    function finishLoading() {
+      loadingScreen.setAttribute('visible', 'false');
+      mainMenu.setAttribute('visible', 'true');
+      overlay.innerHTML = `<strong>GORILLATOOL VR</strong><br>✅ Connecté au Meta Quest`;
+    }
+
+    // Interaction avec les manettes (trigger = click)
+    function setupControllerInteraction() {
+      const options = document.querySelectorAll('.option, #exit-btn');
+
+      options.forEach(option => {
+        option.addEventListener('click', () => {
+          if (option.id === 'exit-btn') {
+            if (scene.xrSession) scene.xrSession.end();
+            return;
+          }
+
+          const cheatName = option.querySelector('a-text').getAttribute('value');
+          if (!cheatName) return;
+
+          cheats[cheatName] = !cheats[cheatName];
+          
+          const statusEl = document.getElementById(cheatName.toLowerCase().replace(/\s+/g, '') + '-status');
+          if (statusEl) {
+            statusEl.setAttribute('value', cheats[cheatName] ? 'ON' : 'OFF');
+            statusEl.setAttribute('color', cheats[cheatName] ? '#00ff88' : '#ff4444');
+          }
+
+          // Petit feedback visuel
+          option.setAttribute('scale', '1.05 1.05 1.05');
+          setTimeout(() => option.setAttribute('scale', '1 1 1'), 120);
+        });
+      });
+    }
+
+    // Détection + entrée en VR/MR
+    async function startVR() {
+      if (!navigator.xr) return;
+
+      const isARSupported = await navigator.xr.isSessionSupported('immersive-ar');
+      const mode = isARSupported ? 'immersive-ar' : 'immersive-vr';
 
       try {
         const session = await navigator.xr.requestSession(mode, {
           optionalFeatures: ['local-floor', 'hand-tracking']
         });
         scene.xrSession = session;
-        connected = true;
-        console.log("GORILLATOOL connecté au casque !");
-      } catch (e) {
-        console.log("Impossible d'entrer en VR automatiquement");
+        console.log('GORILLATOOL → Session WebXR démarrée');
+      } catch (err) {
+        console.log('Entrée VR manuelle requise');
       }
-    }
-
-    // Toggle des cheats (cliquable avec contrôleurs ou mains)
-    function setupToggles() {
-      document.querySelectorAll('.toggle').forEach(el => {
-        const name = el.getAttribute('data-name');
-        el.addEventListener('click', () => {
-          cheats[name] = !cheats[name];
-          const statusEl = document.getElementById(name.toLowerCase().replace(/\s+/g, '') + '-status');
-          if (statusEl) {
-            statusEl.setAttribute('value', cheats[name] ? 'ON' : 'OFF');
-            statusEl.setAttribute('color', cheats[name] ? '#00ff00' : '#ff0000');
-          }
-          console.log(`${name} → ${cheats[name] ? 'ON' : 'OFF'}`);
-        });
-      });
-    }
-
-    function exitVR() {
-      if (scene.xrSession) {
-        scene.xrSession.end();
-      }
-      window.location.reload();
     }
 
     // Initialisation
     window.addEventListener('load', () => {
-      setupToggles();
-      detectAndEnterVR();
+      startLoading();
+      setupControllerInteraction();
+      startVR();
 
-      // Message de bienvenue
+      // Petit message après 1s
       setTimeout(() => {
-        if (connected) {
-          document.querySelector('.info').innerHTML = `<strong>GORILLATOOL VR</strong><br>Connecté avec succès !`;
-        }
-      }, 2000);
+        overlay.style.color = '#0f0';
+      }, 1200);
     });
   </script>
 </body>
