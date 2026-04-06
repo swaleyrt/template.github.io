@@ -2,192 +2,126 @@
 <html lang="fr">
 <head>
   <meta charset="utf-8">
-  <title>GORILLATOOL VR - Quest Edition</title>
+  <title>GORILLATOOL - VR Controller</title>
   <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
   <style>
-    body { margin:0; overflow:hidden; background:#000; font-family: monospace; }
+    body { margin:0; overflow:hidden; background:#000; }
     .overlay {
-      position: absolute; top: 10px; left: 10px; color: #0ff; 
-      background: rgba(10,0,30,0.8); padding: 15px; border-radius: 10px;
-      z-index: 200; pointer-events: none; border: 1px solid #0ff;
+      position: absolute; top: 15px; left: 15px; color: #0ff; 
+      background: rgba(10,0,30,0.9); padding: 15px; border-radius: 10px;
+      z-index: 200; font-family: monospace; border: 1px solid #0ff;
     }
   </style>
 </head>
 <body>
   <div id="overlay" class="overlay">
-    <strong>GORILLATOOL VR</strong><br>
-    Initialisation...
+    <strong>GORILLATOOL</strong><br>
+    Appuie sur ENTER VR pour utiliser les manettes
   </div>
 
-  <a-scene background="color: #0a001f" xr-mode-ui="enabled: false" loading-screen="enabled: false">
+  <a-scene background="color: #0a001f" xr-mode-ui="enabled: false">
 
     <!-- Lumières néon -->
     <a-entity light="type: ambient; color: #220033; intensity: 0.8"></a-entity>
-    <a-entity light="type: point; color: #ff00ff; intensity: 1.5" position="0 5 -3"></a-entity>
-    <a-entity light="type: point; color: #00ffff; intensity: 1.2" position="4 3 -6"></a-entity>
+    <a-entity light="type: point; color: #ff00ff; intensity: 1.5" position="0 5 -5"></a-entity>
 
-    <!-- Menu de Loading (caché après chargement) -->
-    <a-entity id="loading-screen" position="0 1.5 -4">
-      <a-plane width="4" height="2.5" color="#110022" opacity="0.95"></a-plane>
+    <!-- Menu principal -->
+    <a-entity id="menu" position="0 1.6 -4">
+
+      <a-plane width="4" height="3" color="#1a0033" opacity="0.95" shadow></a-plane>
       
-      <a-text value="GORILLATOOL" position="0 0.8 0.1" color="#ff00ff" align="center" width="3" font="https://cdn.aframe.io/fonts/Exo2Bold.fnt"></a-text>
-      <a-text id="loading-text" value="DETECTING META QUEST..." position="0 0.2 0.1" color="#00ffcc" align="center" width="2.8"></a-text>
-      
-      <!-- Barre de progression -->
-      <a-plane id="progress-bar-bg" width="3" height="0.15" color="#330033" position="0 -0.5 0.1"></a-plane>
-      <a-plane id="progress-bar" width="0" height="0.12" color="#00ff88" position="-1.5 -0.5 0.15"></a-plane>
-      
-      <a-text value="CONNECTING TO HEADSET..." position="0 -1 0.1" color="#ff8800" align="center" width="2.5"></a-text>
+      <a-text value="GORILLATOOL" position="0 1.1 0.1" color="#ff00ff" align="center" width="3.5" font="https://cdn.aframe.io/fonts/Exo2Bold.fnt"></a-text>
+      <a-text value="Utilise les manettes pour activer les options" position="0 0.6 0.1" color="#00ffcc" align="center" width="3"></a-text>
+
+      <!-- Options -->
+      <a-entity class="option" id="aimbot" position="0 0.1 0.1" data-state="off">
+        <a-plane width="3.5" height="0.5" color="#220044"></a-plane>
+        <a-text value="Aimbot" position="-1.3 0 0.05" color="white" width="2.2"></a-text>
+        <a-text id="aimbot-status" value="OFF" position="1.4 0 0.05" color="#ff4444" align="right" width="1"></a-text>
+      </a-entity>
+
+      <a-entity class="option" id="esp" position="0 -0.5 0.1" data-state="off">
+        <a-plane width="3.5" height="0.5" color="#220044"></a-plane>
+        <a-text value="ESP" position="-1.3 0 0.05" color="white" width="2.2"></a-text>
+        <a-text id="esp-status" value="OFF" position="1.4 0 0.05" color="#ff4444" align="right" width="1"></a-text>
+      </a-entity>
+
+      <a-entity class="option" id="norecoil" position="0 -1.1 0.1" data-state="off">
+        <a-plane width="3.5" height="0.5" color="#220044"></a-plane>
+        <a-text value="No Recoil" position="-1.3 0 0.05" color="white" width="2.2"></a-text>
+        <a-text id="norecoil-status" value="OFF" position="1.4 0 0.05" color="#ff4444" align="right" width="1"></a-text>
+      </a-entity>
+
+      <a-entity class="option" id="ammo" position="0 -1.7 0.1" data-state="off">
+        <a-plane width="3.5" height="0.5" color="#220044"></a-plane>
+        <a-text value="Unlimited Ammo" position="-1.3 0 0.05" color="white" width="2.2"></a-text>
+        <a-text id="ammo-status" value="OFF" position="1.4 0 0.05" color="#ff4444" align="right" width="1"></a-text>
+      </a-entity>
+
+      <!-- Bouton ENTER VR (bas à droite) -->
+      <a-entity id="enter-vr" position="1.6 -2.2 0.1">
+        <a-plane width="2" height="0.7" color="#0066ff"></a-plane>
+        <a-text value="ENTER VR MODE" position="0 0 0.05" color="white" align="center" width="1.8"></a-text>
+      </a-entity>
+
     </a-entity>
 
-    <!-- Menu principal (apparaît après loading) -->
-    <a-entity id="main-menu" visible="false" position="0 1.4 -3.8">
-
-      <a-plane width="3.8" height="3" color="#1a0033" opacity="0.96" shadow></a-plane>
-      
-      <a-text value="GORILLATOOL MENU" position="0 1.2 0.1" color="#ff00ff" align="center" width="3" font="https://cdn.aframe.io/fonts/Exo2Bold.fnt"></a-text>
-      <a-text id="connected-status" value="CONNECTED TO META QUEST" position="0 0.8 0.1" color="#00ff88" align="center" width="2.8"></a-text>
-
-      <!-- Options togglables (avec raycaster + trigger) -->
-      <a-entity class="option" id="aimbot" position="0 0.3 0.1" data-state="off">
-        <a-plane width="3" height="0.45" color="#220044"></a-plane>
-        <a-text value="Aimbot" position="-1.2 0 0.05" color="white" width="2"></a-text>
-        <a-text id="aimbot-status" value="OFF" position="1.1 0 0.05" color="#ff4444" align="right" width="1"></a-text>
-      </a-entity>
-
-      <a-entity class="option" id="esp" position="0 -0.25 0.1" data-state="off">
-        <a-plane width="3" height="0.45" color="#220044"></a-plane>
-        <a-text value="ESP" position="-1.2 0 0.05" color="white" width="2"></a-text>
-        <a-text id="esp-status" value="OFF" position="1.1 0 0.05" color="#ff4444" align="right" width="1"></a-text>
-      </a-entity>
-
-      <a-entity class="option" id="norecoil" position="0 -0.8 0.1" data-state="off">
-        <a-plane width="3" height="0.45" color="#220044"></a-plane>
-        <a-text value="No Recoil" position="-1.2 0 0.05" color="white" width="2"></a-text>
-        <a-text id="norecoil-status" value="OFF" position="1.1 0 0.05" color="#ff4444" align="right" width="1"></a-text>
-      </a-entity>
-
-      <a-entity class="option" id="ammo" position="0 -1.35 0.1" data-state="off">
-        <a-plane width="3" height="0.45" color="#220044"></a-plane>
-        <a-text value="Unlimited Ammo" position="-1.2 0 0.05" color="white" width="2"></a-text>
-        <a-text id="ammo-status" value="OFF" position="1.1 0 0.05" color="#ff4444" align="right" width="1"></a-text>
-      </a-entity>
-
-      <!-- Bouton Exit -->
-      <a-entity id="exit-btn" position="0 -2.1 0.1">
-        <a-plane width="2.2" height="0.5" color="#880000"></a-plane>
-        <a-text value="EXIT TOOL" position="0 0 0.05" color="#ffffff" align="center" width="1.8"></a-text>
-      </a-entity>
-    </a-entity>
-
-    <!-- Raycaster pour les manettes (laser) -->
-    <a-camera>
-      <a-entity cursor="rayOrigin: mouse" raycaster="objects: .option, #exit-btn" visible="false"></a-entity>
-    </a-camera>
-
-    <!-- Contrôleurs (gauche + droite) avec raycaster -->
-    <a-entity id="left-hand" hand-controls="hand: left; handModelStyle: lowPoly" raycaster="objects: .option, #exit-btn" line="color: #00ffff; opacity: 0.8"></a-entity>
-    <a-entity id="right-hand" hand-controls="hand: right; handModelStyle: lowPoly" raycaster="objects: .option, #exit-btn" line="color: #ff00ff; opacity: 0.8"></a-entity>
-
-    <!-- Sol grid néon -->
-    <a-plane position="0 0 -5" rotation="-90 0 0" width="30" height="30" color="#0a001f" material="shader: flat"></a-plane>
+    <!-- Contrôleurs (pour les gâchettes) -->
+    <a-entity id="right-hand" meta-touch-controls="hand: right" raycaster="objects: .option, #enter-vr" line="color: #ff00ff; opacity: 0.8"></a-entity>
+    <a-entity id="left-hand"  meta-touch-controls="hand: left"  raycaster="objects: .option, #enter-vr" line="color: #00ffff; opacity: 0.8"></a-entity>
 
   </a-scene>
 
   <script>
     const scene = document.querySelector('a-scene');
-    const loadingScreen = document.getElementById('loading-screen');
-    const mainMenu = document.getElementById('main-menu');
-    const overlay = document.getElementById('overlay');
+    const cheats = {
+      "Aimbot": false,
+      "ESP": false,
+      "No Recoil": false,
+      "Unlimited Ammo": false
+    };
 
-    let cheats = { Aimbot: false, ESP: false, "No Recoil": false, "Unlimited Ammo": false };
-
-    // Animation de la barre de loading
-    function startLoading() {
-      let progress = 0;
-      const bar = document.getElementById('progress-bar');
-      const text = document.getElementById('loading-text');
-
-      const interval = setInterval(() => {
-        progress += Math.random() * 8 + 4;
-        if (progress > 100) progress = 100;
-        
-        bar.setAttribute('width', (progress / 100) * 3);
-        bar.setAttribute('position', `${-1.5 + (progress / 100) * 1.5} -0.5 0.15`);
-
-        if (progress > 40) text.setAttribute('value', 'CONNECTING TO QUEST...');
-        if (progress > 75) text.setAttribute('value', 'INITIALIZING TOOL...');
-
-        if (progress >= 100) {
-          clearInterval(interval);
-          setTimeout(finishLoading, 600);
-        }
-      }, 80);
+    function toggleCheat(cheatName) {
+      cheats[cheatName] = !cheats[cheatName];
+      const statusEl = document.getElementById(cheatName.toLowerCase().replace(/\s+/g, '') + '-status');
+      if (statusEl) {
+        statusEl.setAttribute('value', cheats[cheatName] ? 'ON' : 'OFF');
+        statusEl.setAttribute('color', cheats[cheatName] ? '#00ff88' : '#ff4444');
+      }
     }
 
-    function finishLoading() {
-      loadingScreen.setAttribute('visible', 'false');
-      mainMenu.setAttribute('visible', 'true');
-      overlay.innerHTML = `<strong>GORILLATOOL VR</strong><br>✅ Connecté au Meta Quest`;
-    }
+    // Interaction avec les gâchettes des manettes
+    function setupControllers() {
+      const options = document.querySelectorAll('.option, #enter-vr');
 
-    // Interaction avec les manettes (trigger = click)
-    function setupControllerInteraction() {
-      const options = document.querySelectorAll('.option, #exit-btn');
-
-      options.forEach(option => {
-        option.addEventListener('click', () => {
-          if (option.id === 'exit-btn') {
-            if (scene.xrSession) scene.xrSession.end();
+      options.forEach(opt => {
+        opt.addEventListener('triggerdown', () => {   // <- événement le plus fiable pour la gâchette
+          if (opt.id === 'enter-vr') {
+            scene.enterVR({ mode: 'immersive-ar' }).catch(() => {
+              scene.enterVR({ mode: 'immersive-vr' });
+            });
             return;
           }
 
-          const cheatName = option.querySelector('a-text').getAttribute('value');
-          if (!cheatName) return;
-
-          cheats[cheatName] = !cheats[cheatName];
-          
-          const statusEl = document.getElementById(cheatName.toLowerCase().replace(/\s+/g, '') + '-status');
-          if (statusEl) {
-            statusEl.setAttribute('value', cheats[cheatName] ? 'ON' : 'OFF');
-            statusEl.setAttribute('color', cheats[cheatName] ? '#00ff88' : '#ff4444');
+          const name = opt.querySelector('a-text').getAttribute('value');
+          if (cheats.hasOwnProperty(name)) {
+            toggleCheat(name);
+            
+            // Feedback visuel
+            opt.setAttribute('scale', '1.1 1.1 1.1');
+            setTimeout(() => opt.setAttribute('scale', '1 1 1'), 200);
           }
-
-          // Petit feedback visuel
-          option.setAttribute('scale', '1.05 1.05 1.05');
-          setTimeout(() => option.setAttribute('scale', '1 1 1'), 120);
         });
       });
     }
 
-    // Détection + entrée en VR/MR
-    async function startVR() {
-      if (!navigator.xr) return;
-
-      const isARSupported = await navigator.xr.isSessionSupported('immersive-ar');
-      const mode = isARSupported ? 'immersive-ar' : 'immersive-vr';
-
-      try {
-        const session = await navigator.xr.requestSession(mode, {
-          optionalFeatures: ['local-floor', 'hand-tracking']
-        });
-        scene.xrSession = session;
-        console.log('GORILLATOOL → Session WebXR démarrée');
-      } catch (err) {
-        console.log('Entrée VR manuelle requise');
-      }
-    }
-
-    // Initialisation
     window.addEventListener('load', () => {
-      startLoading();
-      setupControllerInteraction();
-      startVR();
+      setupControllers();
 
-      // Petit message après 1s
+      // Message de bienvenue
       setTimeout(() => {
-        overlay.style.color = '#0f0';
-      }, 1200);
+        document.getElementById('overlay').innerHTML = `<strong>GORILLATOOL</strong><br>Prêt - Clique sur ENTER VR MODE`;
+      }, 1000);
     });
   </script>
 </body>
